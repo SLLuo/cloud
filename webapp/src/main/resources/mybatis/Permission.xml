@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.newtouch.sysmgr.dao.PermissionDAO">
+
+    <resultMap id="permissionMap" type="permission" autoMapping="true">
+    </resultMap>
+    
+    <sql id="findSelfSQL">
+        <![CDATA[
+            select p.id, p.mark, p.type, p.name, p.title, p.parent_id
+              from crmr_permission p
+		]]>
+    </sql>
+
+    <select id="findSelf" resultMap="permissionMap">
+        <include refid="findSelfSQL"/>
+        where p.parent_id = #parentId
+    </select>
+
+    <select id="findRootSelf" resultMap="permissionMap">
+        <include refid="findSelfSQL"/>
+        where p.parent_id is null
+    </select>
+
+    <select id="findAllSelf" resultMap="permissionMap">
+        <include refid="findSelfSQL"/>
+    </select>
+
+    <insert id="createSelf" parameterType="permission">
+        <selectKey keyProperty="id" resultType="_long" order="BEFORE">
+            select seq_crmr.nextval
+        </selectKey>
+        <![CDATA[
+            insert into crmr_permission
+              (id, mark, type, name, title, parent_id)
+            values
+              (#id, #mark, #type, #name, #title, #parent_id)
+        ]]>
+    </insert>
+
+    <update id="modifySelf" parameterType="permission">
+        <![CDATA[
+            update crmr_permission
+               set mark = #mark,
+                   type = #type,
+                   name = #name,
+                   title = #title,
+                   parent_id = #parent_id
+             where id = #id
+		]]>
+    </update>
+
+    <update id="modifySelfSite" parameterType="permission">
+        <![CDATA[
+            update crmr_permission
+               set mark = #mark,
+                   parent_id = #parent_id
+             where id = #id
+		]]>
+    </update>
+
+    <delete id="removeSelf">
+        <![CDATA[
+			delete crmr_permission where id = #id
+		]]>
+    </delete>
+
+    <resultMap id="resourceMap" type="resource" autoMapping="true">
+        <association column="permission_id" property="permission" javaType="permission" columnPrefix="permission_" autoMapping="true">
+        </association>
+    </resultMap>
+
+    <select id="findResource" resultMap="resourceMap">
+        <![CDATA[
+            select r.id, r.source
+            from crmr_resource r
+            where p.permission_id = #{permissionId}
+        ]]>
+    </select>
+
+    <select id="findAllResource" resultMap="resourceMap">
+        <![CDATA[
+            select r.id, r.source, p.id permission_id,
+            p.name permission_name, p.title permission_title
+            from crmr_permission p
+            left join crmr_resource r on r.permission_id = p.id
+        ]]>
+    </select>
+
+    <insert id="createResource" parameterType="resource">
+        <selectKey keyProperty="id" resultType="_long" order="BEFORE">
+            select seq_crmr.nextval
+        </selectKey>
+        <![CDATA[
+            insert into crmr_resource
+              (id, source, permission_id)
+            values
+              (#id, #source, #permissionId)
+		]]>
+    </insert>
+
+    <delete id="removeResource">
+        <![CDATA[
+			delete crmr_resource where id = #id
+		]]>
+    </delete>
+
+    <select id="findSelfByRole" resultMap="permissionMap">
+        <![CDATA[
+            select p.id, p.mark, p.type, p.name, p.title, p.parent_id
+            from crmr_role_permission r
+            left join crmr_permission p on p.id = r.permission_id
+            where r.role_id = #roleId
+		]]>
+    </select>
+
+    <insert id="connectRole">
+        <![CDATA[
+            insert into crmr_role_permission(role_id, permission_id) values(#roleId, #permissionId)
+		]]>
+    </insert>
+
+    <delete id="disconnectRole">
+        <![CDATA[
+            delete crmr_role_permission where role_id = #roleId and permission_id = #permissionId
+		]]>
+    </delete>
+</mapper>
+

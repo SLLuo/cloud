@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.newtouch.sysmgr.dao.RoleDAO">
+
+    <resultMap id="roleMap" type="role" autoMapping="true">
+    </resultMap>
+
+    <select id="findSelf" resultMap="roleMap">
+        <bind name="_title" value="'%' + _parameter.title + '%'" />
+        <![CDATA[
+            select r.id,
+                   r.name,
+                   r.title
+              from crmr_role r
+        ]]>
+        <trim prefix="where" prefixOverrides="and |or ">
+			<if test="title != null">and r.title like #{_title}</if>
+		</trim>
+    </select>
+
+    <insert id="createSelf" parameterType="role">
+        <selectKey keyProperty="id" resultType="_long" order="BEFORE">
+            select seq_crmr.nextval
+        </selectKey>
+        <![CDATA[
+            insert into crmr_role(id, name, title) values(#id, #name, #title)
+		]]>
+    </insert>
+
+    <update id="modifySelf" parameterType="role">
+       <![CDATA[
+            update crmr_role
+               set enabled     = #enabled,
+                   real_name   = #real_name,
+                   position_id = #position_id
+             where id = #id
+		]]>
+    </update>
+
+    <delete id="removeSelf">
+		<![CDATA[  
+			delete crmr_user where id = #id
+		]]>   
+    </delete>
+
+    <select id="findSelfByPosition" resultMap="roleMap">
+        <![CDATA[
+            select r.id,
+                   r.name,
+                   r.title
+              from crmr_position_role p
+              left join crmr_role r on r.id = p.role_id
+              where p.position_id = #positionId
+        ]]>
+    </select>
+
+    <insert id="connectPosition">
+        <![CDATA[
+            insert into crmr_position_role(position_id, role_id, allow_grant) values(#positionId, #roleId, #{allowGrant?1:0})
+		]]>
+    </insert>
+
+    <delete id="disconnectPosition">
+        <![CDATA[
+            delete crmr_position_role where position_id = #positionId and role_id = #role_id
+		]]>
+    </delete>
+
+</mapper>
+

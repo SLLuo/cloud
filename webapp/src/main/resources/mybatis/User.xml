@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.newtouch.sysmgr.dao.UserDAO">
+
+    <resultMap id="userMap" type="user" autoMapping="true">
+	    <result column="enabled" property="enabled" typeHandler="com.newtouch.mybatis.handler.IntBooleanTypeHandler"/>
+	    <result column="real_name" property="realName"/>
+        <association column="position_id" property="position" javaType="position" columnPrefix="position_" autoMapping="true">
+        </association>
+    </resultMap>
+
+    <resultMap id="userDetailMap" type="user" extends="userMap">
+        <association column="position_id" property="position" javaType="position" columnPrefix="position_" autoMapping="true">
+            <association column="branch_code" property="branch" javaType="branch" columnPrefix="branch_" autoMapping="true">
+            </association>
+        </association>
+    </resultMap>
+
+    <select id="findSelf" resultMap="userMap">
+        <bind name="_username" value="'%' + _parameter.username + '%'" />
+        <bind name="_realName" value="'%' + _parameter.realName + '%'" />
+        <![CDATA[
+            select u.id,
+                   u.username,
+                   u.password,
+                   u.salt,
+                   u.enabled,
+                   u.real_name,
+                   u.position_id,
+                   p.name position_name
+              from crmr_user u
+              left join crmr_position p
+                on p.id = u.position_id
+        ]]>
+        <trim prefix="where" prefixOverrides="and |or ">
+            <if test="enabled != null">and u.enabled = #{enabled}</if>
+			<if test="username != null">and u.username like #{_username}</if>
+            <if test="real_name != null">and u.real_name like #{_realName}</if>
+		</trim>
+    </select>
+
+    <select id="getSelf" resultMap="userDetailMap">
+        <![CDATA[
+            select u.id,
+                   u.username,
+                   u.password,
+                   u.salt,
+                   u.enabled,
+                   u.real_name,
+                   p.id        position_id,
+                   p.name      position_name,
+                   b.code      branch_code,
+                   b.name      branch_name
+              from crmr_user u
+              left join crmr_position p
+                on p.id = u.position_id
+              left join crmr_branch b
+                on b.code = p.branch_code
+             where u.id = #id
+		]]>
+    </select>
+
+    <insert id="createSelf" parameterType="user">
+        <selectKey keyProperty="id" resultType="_long" order="BEFORE">
+            select seq_crmr.nextval
+        </selectKey>
+        <![CDATA[
+            insert into crmr_user
+              (id, username, password, salt, enabled, real_name, position_id)
+            values
+              (#id, #username, #password, #salt, #enabled, #real_name, #position_id)
+		]]>
+    </insert>
+
+    <update id="modifySelf" parameterType="user">
+       <![CDATA[
+            update crmr_user
+               set enabled     = #enabled,
+                   real_name   = #real_name,
+                   position_id = #position_id
+             where id = #id
+		]]>
+    </update>
+
+    <update id="modifyPassword" parameterType="user">
+        <![CDATA[
+            update crmr_user
+               set password = #password,
+                   salt = #salt
+             where id = #id
+		]]>
+    </update>
+
+    <delete id="removeSelf">
+		<![CDATA[  
+			delete crmr_user where id = #id
+		]]>   
+    </delete>
+</mapper>
+

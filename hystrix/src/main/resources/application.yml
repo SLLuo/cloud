@@ -1,0 +1,28 @@
+server:
+  port: 7401
+endpoints:
+  restart:
+    enabled: true
+  shutdown:
+    enabled: true
+spring:
+  application:
+    name: hystrix #为你的应用起个名字，该名字将注册到eureka注册中心
+  cloud:
+    zookeeper:
+      enabled: true  # true:开启zookeeper外部化配置, false:读取本地配置; 需要将config.enabled,config.watcher.enabled同时设置
+      connect-string: 127.0.0.1:2181
+      config:
+        enabled: true
+#        watcher:
+#          enabled: false
+#eureka:
+#  instance:
+#    statusPageUrlPath: ${management.context-path}/info
+#    healthCheckUrlPath: ${management.context-path}/health
+#    leaseRenewalIntervalInSeconds: 10 #心跳间隔
+#    metadata-map:
+#      cluster: MAIN
+#  client:
+#    serviceUrl:
+#      defaultZone: http://localhost:8761/eureka/ #去哪里注册，eureka服务地址
